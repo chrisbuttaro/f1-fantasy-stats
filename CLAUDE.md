@@ -34,6 +34,10 @@ Response shape:
 
 `driver[0]` is the "fantasy points" category. Each `Driver` has: `playerid`, `playername`, `curvalue` (price in $m), `teamid`, `teamname`, `statvalue` (fantasy points), `rnk`.
 
+## Git
+
+Do not run `git commit` or `git push` — the user handles all commits and pushes themselves.
+
 ## Dependency Policy
 
 ### Allowed package sources
