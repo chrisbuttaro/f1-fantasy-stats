@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl --silent --location 'https://fantasy.formula1.com/feeds/v2/statistics/driverconstructors_4.json?buster=20260405182233' --header 'sec-ch-ua-platform: \"Windows\"' --header 'Referer: https://fantasy.formula1.com/en/statistics' --header 'User-Agent: Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\) AppleWebKit/537.36 \\(KHTML, like Gecko\\) Chrome/145.0.0.0 Safari/537.36' --header 'Accept: application/json, text/plain, */*' --header 'sec-ch-ua: \"Chromium\";v=\"145\", \"Not:A-Brand\";v=\"99\"' --header 'sec-ch-ua-mobile: ?0')",
+      "Bash(curl --silent --location 'https://fantasy.formula1.com/feeds/v2/statistics/driverconstructors_4.json?buster=20260405182233' --header 'sec-ch-ua-platform: \"Windows\"' --header 'Referer: https://fantasy.formula1.com/en/statistics' --header 'User-Agent: Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\) AppleWebKit/537.36 \\(KHTML, like Gecko\\) Chrome/145.0.0.0 Safari/537.36' --header 'Accept: application/json, text/plain, */*' --header 'sec-ch-ua: \"Chromium\";v=\"99\"' --header 'sec-ch-ua-mobile: ?0')",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); drivers=d['Data']['driver'][0]['participants']; [print\\(p['rnk'], p['playername'], p['teamname'], p['statvalue'], p['curvalue']\\) for p in drivers]\")",
+      "Bash(node -e \"let d=''; process.stdin.on\\('data',c=>d+=c\\); process.stdin.on\\('end',\\(\\)=>{ const j=JSON.parse\\(d\\); const p=j.Data.driver[0].participants; console.log\\(JSON.stringify\\(p,null,2\\)\\); }\\)\")",
+      "Bash(curl --silent --head 'https://fantasy.formula1.com/feeds/v2/statistics/driverconstructors_4.json?buster=20260405182233' --header 'Origin: http://localhost:5173' --header 'User-Agent: Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\) AppleWebKit/537.36 \\(KHTML, like Gecko\\) Chrome/145.0.0.0 Safari/537.36')",
+      "Read(//mnt/c/Users/chris/IdeaProjects/**)",
+      "Bash(npm run:*)"
+    ]
+  }
+}
