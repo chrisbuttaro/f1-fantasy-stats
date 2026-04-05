@@ -1,8 +1,1 @@
-{
-  "rewrites": [
-    {
-      "source": "/api/f1/:path*",
-      "destination": "https://fantasy.formula1.com/feeds/v2/statistics/:path*"
-    }
-  ]
-}
+{}
