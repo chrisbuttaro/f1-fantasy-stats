@@ -23,6 +23,17 @@ This is a React 19 + TypeScript app bootstrapped with Vite 8. Currently in early
 - ESLint config uses flat config format (`eslint.config.js`) with `typescript-eslint`, `eslint-plugin-react-hooks`, and `eslint-plugin-react-refresh`
 - TypeScript uses split tsconfig: `tsconfig.app.json` for source, `tsconfig.node.json` for Vite config
 
+## F1 Fantasy API
+
+The app fetches from `https://fantasy.formula1.com/feeds/v2/statistics/driverconstructors_4.json`. This endpoint returns no CORS headers, so all browser fetches must go through the Vite dev proxy configured in `vite.config.ts` at `/api/f1/*` → `https://fantasy.formula1.com/feeds/v2/statistics/*`. Production deployments will need an equivalent proxy or server-side fetch.
+
+Response shape:
+```
+{ Data: { season: "2026", driver: [ { config: {...}, participants: Driver[] } ] } }
+```
+
+`driver[0]` is the "fantasy points" category. Each `Driver` has: `playerid`, `playername`, `curvalue` (price in $m), `teamid`, `teamname`, `statvalue` (fantasy points), `rnk`.
+
 ## Dependency Policy
 
 ### Allowed package sources
