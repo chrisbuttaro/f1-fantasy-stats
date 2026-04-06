@@ -139,6 +139,7 @@ interface RankingTableProps {
   pickedIds: string[]
   onPick: (e: React.MouseEvent, playerId: string) => void
   maxPicks: number
+  remainingBudget: number | null  // null = no budget set; otherwise blocks picks that exceed it
   statsCache: Record<string, RaceStat[]>
   statsLoading: boolean
   statsError: string | null
@@ -148,7 +149,7 @@ interface RankingTableProps {
 // Constructors have playername === null, so teamname is used as the display name.
 function RankingTable({
   items, isConstructor, expandedId, onExpand,
-  pickedIds, onPick, maxPicks, statsCache, statsLoading, statsError,
+  pickedIds, onPick, maxPicks, remainingBudget, statsCache, statsLoading, statsError,
 }: RankingTableProps) {
   return (
     <div className="table-card">
@@ -166,7 +167,11 @@ function RankingTable({
         const rankClass = item.rnk === 1 ? 'rank-1' : item.rnk === 2 ? 'rank-2' : item.rnk === 3 ? 'rank-3' : ''
         const isExpanded = expandedId === item.playerid
         const isPicked = pickedIds.includes(item.playerid)
-        const pickDisabled = !isPicked && pickedIds.length >= maxPicks
+        // Disabled when: count limit reached, OR budget set and price exceeds what's left
+        const pickDisabled = !isPicked && (
+          pickedIds.length >= maxPicks ||
+          (remainingBudget !== null && item.curvalue > remainingBudget)
+        )
         const isLast = idx === items.length - 1
         const stats = statsCache[item.playerid]
         // Constructors use teamname as their display name
@@ -265,6 +270,16 @@ export default function App() {
   const [pickedDriverIds, setPickedDriverIds] = useState<string[]>([])
   const [pickedConstructorIds, setPickedConstructorIds] = useState<string[]>([])
 
+  // Budget — raw string input so the user can type freely; parsed to a number for logic
+  const [budgetInput, setBudgetInput] = useState('')
+  const budget = parseFloat(budgetInput) || 0
+
+  // Derived team values — declared here so pick handlers can reference totalCost
+  const pickedDrivers = pickedDriverIds.map(id => drivers.find(d => d.playerid === id)).filter(Boolean) as Participant[]
+  const pickedConstructors = pickedConstructorIds.map(id => constructors.find(c => c.playerid === id)).filter(Boolean) as Participant[]
+  const totalCost = [...pickedDrivers, ...pickedConstructors].reduce((sum, p) => sum + p.curvalue, 0)
+  const remainingBudget = budget > 0 ? budget - totalCost : null
+
   // ── Data fetching ──────────────────────────────────────────────────────────
 
   // Fetches drivers and constructors from the same endpoint in one request.
@@ -321,7 +336,7 @@ export default function App() {
       for (const fx of val.FixtureWiseStats) {
         if (fx.RaceDayWise.length > 0 && totals[fx.GamedayId] !== undefined) {
           const rd = fx.RaceDayWise[0]
-          races.push({ gamedayId: fx.GamedayId, meetingName: rd.MeetingName, location: rd.MeetingLocation, points: totals[fx.GamedayId] })
+          races.push({ gamedayId: fx.GamedayId, meetingName: rd.MeetingName, location: rd.CountryName, points: totals[fx.GamedayId] })
         }
       }
       races.sort((a, b) => a.gamedayId - b.gamedayId)
@@ -341,33 +356,36 @@ export default function App() {
 
   const toggleDriverPick = useCallback((e: React.MouseEvent, playerId: string) => {
     e.stopPropagation()
-    setPickedDriverIds(prev =>
-      prev.includes(playerId) ? prev.filter(id => id !== playerId)
-      : prev.length >= 5 ? prev
-      : [...prev, playerId]
-    )
-  }, [])
+    if (pickedDriverIds.includes(playerId)) {
+      setPickedDriverIds(prev => prev.filter(id => id !== playerId))
+      return
+    }
+    if (pickedDriverIds.length >= 5) return
+    if (budget > 0) {
+      const player = drivers.find(d => d.playerid === playerId)
+      if (player && totalCost + player.curvalue > budget) return
+    }
+    setPickedDriverIds(prev => [...prev, playerId])
+  }, [pickedDriverIds, budget, drivers, totalCost])
 
   const toggleConstructorPick = useCallback((e: React.MouseEvent, playerId: string) => {
     e.stopPropagation()
-    setPickedConstructorIds(prev =>
-      prev.includes(playerId) ? prev.filter(id => id !== playerId)
-      : prev.length >= 2 ? prev
-      : [...prev, playerId]
-    )
-  }, [])
-
-  // ── Team bar data ──────────────────────────────────────────────────────────
-
-  const pickedDrivers = pickedDriverIds.map(id => drivers.find(d => d.playerid === id)).filter(Boolean) as Participant[]
-  const pickedConstructors = pickedConstructorIds.map(id => constructors.find(c => c.playerid === id)).filter(Boolean) as Participant[]
-  const totalCost = [...pickedDrivers, ...pickedConstructors].reduce((sum, p) => sum + p.curvalue, 0)
-  const hasTeam = pickedDriverIds.length > 0 || pickedConstructorIds.length > 0
+    if (pickedConstructorIds.includes(playerId)) {
+      setPickedConstructorIds(prev => prev.filter(id => id !== playerId))
+      return
+    }
+    if (pickedConstructorIds.length >= 2) return
+    if (budget > 0) {
+      const player = constructors.find(c => c.playerid === playerId)
+      if (player && totalCost + player.curvalue > budget) return
+    }
+    setPickedConstructorIds(prev => [...prev, playerId])
+  }, [pickedConstructorIds, budget, constructors, totalCost])
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className={`app${hasTeam ? ' has-team-bar' : ''}`}>
+    <div className="app has-team-bar">
       <header className="header">
         <span className="header-logo-f1">F1</span>
         <span className="header-logo-fantasy">Fantasy</span>
@@ -416,6 +434,7 @@ export default function App() {
               pickedIds={pickedDriverIds}
               onPick={toggleDriverPick}
               maxPicks={5}
+              remainingBudget={remainingBudget}
               statsCache={statsCache}
               statsLoading={statsLoading}
               statsError={statsError}
@@ -429,6 +448,7 @@ export default function App() {
               pickedIds={pickedConstructorIds}
               onPick={toggleConstructorPick}
               maxPicks={2}
+              remainingBudget={remainingBudget}
               statsCache={statsCache}
               statsLoading={statsLoading}
               statsError={statsError}
@@ -437,37 +457,66 @@ export default function App() {
         </main>
       )}
 
-      {/* Fixed bottom bar — visible whenever any driver or constructor is picked */}
-      {hasTeam && (
-        <div className="team-bar">
-          <div className="team-bar-chips">
-            {/* Driver chips */}
-            {pickedDrivers.map(d => (
-              <div key={d.playerid} className="team-chip" style={{ '--team-color': teamColor(d.teamname) } as React.CSSProperties}>
-                <span className="team-dot" />
-                <span className="chip-name">{d.playername ?? d.teamname}</span>
-                <span className="chip-price">${d.curvalue.toFixed(1)}M</span>
-              </div>
-            ))}
-            {/* Separator between drivers and constructors when both are present */}
-            {pickedDrivers.length > 0 && pickedConstructors.length > 0 && (
-              <div className="team-bar-divider" />
-            )}
-            {/* Constructor chips */}
-            {pickedConstructors.map(c => (
-              <div key={c.playerid} className="team-chip" style={{ '--team-color': teamColor(c.teamname) } as React.CSSProperties}>
-                <span className="team-dot" />
-                <span className="chip-name">{c.teamname}</span>
-                <span className="chip-price">${c.curvalue.toFixed(1)}M</span>
-              </div>
-            ))}
-          </div>
-          <div className="team-bar-total">
-            <span className="team-bar-label">Total</span>
-            <span className="team-bar-value">${totalCost.toFixed(1)}M</span>
-          </div>
+      {/* Fixed bottom bar — always visible so budget can be entered at any time */}
+      <div className="team-bar">
+        {/* Scrollable chip area — shows picked drivers then constructors */}
+        <div className="team-bar-chips">
+          {pickedDrivers.map(d => (
+            <div key={d.playerid} className="team-chip" style={{ '--team-color': teamColor(d.teamname) } as React.CSSProperties}>
+              <span className="team-dot" />
+              <span className="chip-name">{d.playername ?? d.teamname}</span>
+              <span className="chip-price">${d.curvalue.toFixed(1)}M</span>
+            </div>
+          ))}
+          {pickedDrivers.length > 0 && pickedConstructors.length > 0 && (
+            <div className="team-bar-divider" />
+          )}
+          {pickedConstructors.map(c => (
+            <div key={c.playerid} className="team-chip" style={{ '--team-color': teamColor(c.teamname) } as React.CSSProperties}>
+              <span className="team-dot" />
+              <span className="chip-name">{c.teamname}</span>
+              <span className="chip-price">${c.curvalue.toFixed(1)}M</span>
+            </div>
+          ))}
+          {pickedDrivers.length === 0 && pickedConstructors.length === 0 && (
+            <span className="team-bar-empty">Select drivers &amp; constructors to build your team</span>
+          )}
         </div>
-      )}
+
+        {/* Budget input + remaining / spent summary */}
+        <div className="team-bar-budget">
+          <div className="budget-row">
+            <span className="budget-label">Budget</span>
+            <div className="budget-input-wrap">
+              <span className="budget-currency">$</span>
+              <input
+                type="number"
+                className="budget-input"
+                value={budgetInput}
+                onChange={e => setBudgetInput(e.target.value)}
+                placeholder="0.0"
+                min="0"
+                step="0.1"
+              />
+              <span className="budget-currency">M</span>
+            </div>
+          </div>
+          {budget > 0 && (
+            <div className="budget-row">
+              <span className="budget-label">Left</span>
+              <span className={`budget-remaining${remainingBudget !== null && remainingBudget < 0 ? ' over' : ''}`}>
+                ${(remainingBudget ?? 0).toFixed(1)}M
+              </span>
+            </div>
+          )}
+          {totalCost > 0 && (
+            <div className="budget-row">
+              <span className="budget-label">Spent</span>
+              <span className="budget-spent">${totalCost.toFixed(1)}M</span>
+            </div>
+          )}
+        </div>
+      </div>
 
       <footer className="footer">
         Data sourced from F1 Fantasy · {season} Season
