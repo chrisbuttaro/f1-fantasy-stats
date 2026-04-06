@@ -614,19 +614,18 @@
    On small screens (≤600px): collapse to 4 columns (rank | driver | points | chevron)
    by hiding the team cell and pick column. */
 @media (max-width: 600px) {
+  /* On mobile: rank | driver | pick+price | points | chevron — team column hidden */
   .table-header {
-    grid-template-columns: 44px 1fr 80px 28px;
+    grid-template-columns: 44px 1fr 90px 64px 28px;
   }
 
   .driver-row {
-    grid-template-columns: 44px 1fr 80px 28px;
+    grid-template-columns: 44px 1fr 90px 64px 28px;
   }
 
-  /* Hide team and pick columns on mobile — too narrow to be useful */
+  /* Hide the team column only — pick column stays visible */
   .team-cell,
-  .col-label.team-col,
-  .driver-pick,
-  .col-label.pick-col {
+  .col-label.team-col {
     display: none;
   }
 
@@ -636,5 +635,10 @@
 
   .points-value {
     font-size: 17px;
+  }
+
+  /* Tighten the price label on small screens */
+  .pick-price {
+    font-size: 11px;
   }
 }
