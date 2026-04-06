@@ -6,6 +6,11 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
+      '/api/f1-popup': {
+        target: 'https://fantasy.formula1.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/f1-popup/, '/feeds/popup'),
+      },
       '/api/f1': {
         target: 'https://fantasy.formula1.com',
         changeOrigin: true,

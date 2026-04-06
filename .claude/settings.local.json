@@ -9,7 +9,19 @@
       "Read(//mnt/c/Users/chris/IdeaProjects/**)",
       "Bash(npm run:*)",
       "WebSearch",
-      "WebFetch(domain:vercel.com)"
+      "WebFetch(domain:vercel.com)",
+      "WebFetch(domain:f1fantasytools.com)",
+      "Bash(curl -s \"https://fantasy.formula1.com/feeds/popup/playerstats_11161.json?buster=20260406193005\" -H 'accept: application/json' -H 'Referer: https://fantasy.formula1.com/en/statistics' --user-agent \"Mozilla/5.0\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); gd=d['Value']['GamedayWiseStats']; print\\(json.dumps\\([{'id': g['GamedayId'], 'keys': list\\(g.keys\\(\\)\\)} for g in gd], indent=2\\)\\)\")",
+      "Bash(curl -s \"https://fantasy.formula1.com/feeds/popup/playerstats_11161.json?buster=20260406193005\" -H \"accept: application/json\" -H \"Referer: https://fantasy.formula1.com/en/statistics\" --user-agent \"Mozilla/5.0\")",
+      "Bash(node -e \"let d=''; process.stdin.on\\('data',c=>d+=c\\); process.stdin.on\\('end',\\(\\)=>{ const o=JSON.parse\\(d\\); console.log\\(JSON.stringify\\(o.Value.GamedayWiseStats.map\\(g=>\\({id:g.GamedayId,keys:Object.keys\\(g\\)}\\)\\),null,2\\)\\); }\\)\")",
+      "Bash(curl -s \"https://fantasy.formula1.com/feeds/v2/statistics/driverconstructors_4.json?buster=20260406193005\" -H \"accept: application/json\" -H \"Referer: https://fantasy.formula1.com/en/statistics\" --user-agent \"Mozilla/5.0\")",
+      "Bash(node -e \"let d=''; process.stdin.on\\('data',c=>d+=c\\); process.stdin.on\\('end',\\(\\)=>{ const o=JSON.parse\\(d\\); const keys=Object.keys\\(o.Data\\); console.log\\(keys\\); const dr=o.Data.driver[0]; console.log\\('driver[0] keys:', Object.keys\\(dr\\)\\); }\\)\")",
+      "Bash(curl -s \"https://fantasy.formula1.com/feeds/v2/fixtures/fixtures_4.json?buster=20260406193005\" -H \"accept: application/json\" -H \"Referer: https://fantasy.formula1.com/en/statistics\" --user-agent \"Mozilla/5.0\")",
+      "Bash(node -e \"let d=''; process.stdin.on\\('data',c=>d+=c\\); process.stdin.on\\('end',\\(\\)=>{ try{ const o=JSON.parse\\(d\\); console.log\\(JSON.stringify\\(o\\).slice\\(0,1000\\)\\); }catch\\(e\\){console.log\\(d.slice\\(0,500\\)\\);} }\\)\")",
+      "Bash(node -e \"let d=''; process.stdin.on\\('data',c=>d+=c\\); process.stdin.on\\('end',\\(\\)=>{ const o=JSON.parse\\(d\\); console.log\\(JSON.stringify\\(o.Data.driver[0].config,null,2\\)\\); }\\)\")",
+      "Bash(node -e \"let d=''; process.stdin.on\\('data',c=>d+=c\\); process.stdin.on\\('end',\\(\\)=>{ const o=JSON.parse\\(d\\); console.log\\(JSON.stringify\\(Object.keys\\(o.Value\\),null,2\\)\\); }\\)\")",
+      "Bash(node -e \"let d=''; process.stdin.on\\('data',c=>d+=c\\); process.stdin.on\\('end',\\(\\)=>{ const o=JSON.parse\\(d\\); console.log\\(JSON.stringify\\(o.Value.FixtureWiseStats.slice\\(0,3\\),null,2\\)\\); }\\)\")"
     ]
   }
 }
