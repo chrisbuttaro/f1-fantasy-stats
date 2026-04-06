@@ -1,12 +1,17 @@
-/* Root layout — flex column so the footer is pushed to the bottom */
+/* Root layout — flex column so footer is pushed to the bottom */
 .app {
   display: flex;
   flex-direction: column;
   min-height: 100svh;
 }
 
+/* When the fixed team bar is visible, add bottom padding so content isn't hidden beneath it */
+.app.has-team-bar {
+  padding-bottom: 64px;
+}
+
 /* ── Header ──────────────────────────────────────────────────────────────────
-   Sticky bar at the top. Dark background with a 3px F1-red bottom border. */
+   Sticky top bar with F1 Fantasy branding */
 .header {
   background: #15151e;
   border-bottom: 3px solid var(--f1-red);
@@ -20,7 +25,6 @@
   z-index: 10;
 }
 
-/* Big italic "F1" in red */
 .header-logo-f1 {
   font-size: 24px;
   font-weight: 900;
@@ -31,7 +35,6 @@
   text-transform: uppercase;
 }
 
-/* Smaller "Fantasy" wordmark in white */
 .header-logo-fantasy {
   font-size: 13px;
   font-weight: 700;
@@ -41,7 +44,7 @@
   line-height: 1;
 }
 
-/* 1px vertical rule between logo and page title */
+/* 1px rule between logo and page title */
 .header-divider {
   width: 1px;
   height: 28px;
@@ -58,7 +61,7 @@
 }
 
 /* ── Page ────────────────────────────────────────────────────────────────────
-   Centred content column with comfortable vertical padding */
+   Centred content column */
 .page {
   flex: 1;
   max-width: 960px;
@@ -75,7 +78,6 @@
   flex-wrap: wrap;
 }
 
-/* "Driver RANKINGS" — second word is F1-red */
 .page-heading h1 {
   font-size: 26px;
   font-weight: 900;
@@ -88,7 +90,6 @@
   color: var(--f1-red);
 }
 
-/* Small pill badge showing the current season year */
 .season-badge {
   font-size: 11px;
   font-weight: 700;
@@ -101,8 +102,43 @@
   text-transform: uppercase;
 }
 
+/* ── Tabs ────────────────────────────────────────────────────────────────────
+   Drivers / Constructors switcher, sits above the table card */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 0;
+}
+
+.tab {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.15s;
+  bottom: -2px; /* overlap the border-bottom */
+}
+
+.tab:hover {
+  color: var(--text);
+}
+
+/* Active tab — white text with F1-red underline */
+.tab.active {
+  color: #fff;
+  border-bottom: 2px solid var(--f1-red);
+}
+
 /* ── Table card ──────────────────────────────────────────────────────────────
-   Rounded bordered card that wraps the header row and all driver blocks */
+   Rounded bordered card wrapping the column header and all participant blocks */
 .table-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -110,7 +146,7 @@
   overflow: hidden;
 }
 
-/* Column header row — same 6-column grid as .driver-row so labels align exactly.
+/* Column header — same 6-column grid as .driver-row so labels align exactly.
    align-items: end keeps multi-line labels bottom-aligned. */
 .table-header {
   display: grid;
@@ -122,38 +158,32 @@
   align-items: end;
 }
 
-/* Shared column label style — small caps, muted colour */
 .col-label {
   font-size: 10px;
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  line-height: 1.4; /* breathing room for stacked multi-word labels */
+  line-height: 1.4;
 }
 
-/* Centre-aligned labels (pick + points columns) */
 .col-label.right {
   text-align: center;
 }
 
 /* ── Driver block ─────────────────────────────────────────────────────────────
-   Wrapper for one driver row + its optional chart panel.
-   Carries the bottom border so the chart panel (when open) sits inside it. */
+   Wrapper for one row + its collapsible chart panel.
+   .last suppresses the bottom border on the final block. */
 .driver-block {
   border-bottom: 1px solid var(--border);
 }
 
-/* Remove the border on the very last block so there's no double-border
-   against the card's own border. The .last class is added in JSX when
-   the row is not expanded (chart panel visible = border is fine). */
 .driver-block.last {
   border-bottom: none;
 }
 
 /* ── Driver row ──────────────────────────────────────────────────────────────
-   6-column grid: rank | driver | team | pick+price | points | chevron
-   Clicking anywhere expands/collapses the race-points chart. */
+   6-column grid: rank | name | team | pick+price | points | chevron */
 .driver-row {
   display: grid;
   grid-template-columns: 56px 1fr 160px 120px 80px 28px;
@@ -166,29 +196,20 @@
   cursor: pointer;
 }
 
-.driver-row:hover {
-  background: var(--bg-row-hover);
-}
+.driver-row:hover { background: var(--bg-row-hover); }
+.driver-row.expanded { background: var(--bg-row-hover); }
 
-/* Keep the hover background when the chart is open */
-.driver-row.expanded {
-  background: var(--bg-row-hover);
-}
-
-/* 3px team-coloured left accent bar, rendered via a pseudo-element so it
-   doesn't consume a grid column */
+/* 3px team-coloured left accent bar via pseudo-element */
 .driver-row::before {
   content: '';
   position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
+  left: 0; top: 0; bottom: 0;
   width: 3px;
   background: var(--team-color, transparent);
 }
 
 /* ── Chevron ─────────────────────────────────────────────────────────────────
-   CSS-only down-arrow built from two borders. Rotates 180° when open. */
+   CSS-only arrow, rotates when the chart panel is open */
 .row-chevron {
   width: 10px;
   height: 10px;
@@ -200,15 +221,13 @@
   flex-shrink: 0;
 }
 
-/* Rotated upward; changes to team colour to match the open state accent */
 .row-chevron.open {
   transform: rotate(-135deg);
   border-color: var(--team-color, var(--text-muted));
 }
 
 /* ── Chart panel ─────────────────────────────────────────────────────────────
-   Collapsible area below a driver row that shows the RaceChart SVG.
-   Uses the same 3px left accent as the row above it. */
+   Collapsible area beneath the row — same 3px accent as the row */
 .chart-panel {
   padding: 12px 16px 16px;
   background: #111118;
@@ -219,14 +238,11 @@
 .chart-panel::before {
   content: '';
   position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
+  left: 0; top: 0; bottom: 0;
   width: 3px;
   background: var(--team-color, transparent);
 }
 
-/* Small label above the chart: "Driver Name — Points per Race" */
 .chart-title {
   font-size: 11px;
   font-weight: 700;
@@ -236,7 +252,6 @@
   margin-bottom: 8px;
 }
 
-/* Centred spinner placeholder while chart data is loading */
 .chart-loading {
   display: flex;
   align-items: center;
@@ -244,7 +259,6 @@
   height: 80px;
 }
 
-/* Smaller variant of the loading spinner used inside chart-loading */
 .loading-spinner.small {
   width: 24px;
   height: 24px;
@@ -259,7 +273,7 @@
 }
 
 /* ── Rank ────────────────────────────────────────────────────────────────────
-   Large italic rank number, centred in its column. Top 3 get medal colours. */
+   Large italic number; gold / silver / bronze for top 3 */
 .rank {
   display: flex;
   align-items: center;
@@ -280,8 +294,8 @@
 .rank-number.rank-2 { color: var(--silver); }
 .rank-number.rank-3 { color: var(--bronze); }
 
-/* ── Driver info ─────────────────────────────────────────────────────────────
-   Stacked name + team label. min-width: 0 enables text-overflow on flex children. */
+/* ── Driver / constructor info ───────────────────────────────────────────────
+   Stacked name + optional team sub-label. min-width: 0 enables text-overflow. */
 .driver-info {
   display: flex;
   flex-direction: column;
@@ -298,7 +312,7 @@
   text-overflow: ellipsis;
 }
 
-/* Team name below the driver name — coloured with the team accent */
+/* Team name shown in team accent colour below driver name */
 .driver-team-label {
   font-size: 11px;
   font-weight: 600;
@@ -311,7 +325,7 @@
 }
 
 /* ── Team cell ───────────────────────────────────────────────────────────────
-   Coloured dot + team name. Hidden on mobile (see responsive section). */
+   Coloured dot + team name. Hidden on mobile. */
 .team-cell {
   display: flex;
   align-items: center;
@@ -319,7 +333,6 @@
   min-width: 0;
 }
 
-/* Small circle filled with the team's accent colour */
 .team-dot {
   width: 8px;
   height: 8px;
@@ -338,8 +351,7 @@
 }
 
 /* ── Pick checkbox + price ───────────────────────────────────────────────────
-   Custom checkbox (no native input element) with the driver's price alongside.
-   Centred in the column to align with the "Select Your Drivers" header. */
+   Custom styled checkbox centred in the "Select Your Drivers/Constructors" column */
 .driver-pick {
   display: flex;
   justify-content: center;
@@ -355,13 +367,12 @@
   padding: 4px 0;
 }
 
-/* Dimmed + non-interactive when 5 drivers are already picked */
+/* Dimmed when the selection limit is reached */
 .pick-label.disabled {
   opacity: 0.35;
   cursor: not-allowed;
 }
 
-/* The custom checkbox square */
 .pick-box {
   width: 22px;
   height: 22px;
@@ -373,13 +384,12 @@
   position: relative;
 }
 
-/* Filled with team colour when selected */
 .pick-box.checked {
   background: var(--team-color, var(--f1-red));
   border-color: var(--team-color, var(--f1-red));
 }
 
-/* CSS-only white tick mark inside the checked box */
+/* CSS-only white tick mark */
 .pick-box.checked::after {
   content: '';
   position: absolute;
@@ -392,7 +402,6 @@
   transform: rotate(45deg);
 }
 
-/* Price label next to the checkbox — green to match the fantasy money aesthetic */
 .pick-price {
   font-size: 13px;
   font-weight: 700;
@@ -401,8 +410,7 @@
 }
 
 /* ── Points ──────────────────────────────────────────────────────────────────
-   Large italic season points value with a small "pts" unit below it.
-   Centred to match the "Season Points" column header. */
+   Large italic season total, centred under "Season Points" header */
 .points {
   text-align: center;
   display: flex;
@@ -419,10 +427,7 @@
   line-height: 1;
 }
 
-/* Negative points shown in red */
-.points-value.negative {
-  color: #f87171;
-}
+.points-value.negative { color: #f87171; }
 
 .points-unit {
   font-size: 10px;
@@ -433,7 +438,7 @@
 }
 
 /* ── States ──────────────────────────────────────────────────────────────────
-   Full-page loading and error states, vertically + horizontally centred */
+   Full-page loading spinner and error box */
 .state-container {
   display: flex;
   align-items: center;
@@ -442,7 +447,6 @@
   padding: 80px 24px;
 }
 
-/* Spinning ring — uses F1-red for the leading edge */
 .loading-spinner {
   width: 40px;
   height: 40px;
@@ -452,9 +456,7 @@
   animation: spin 0.7s linear infinite;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
+@keyframes spin { to { transform: rotate(360deg); } }
 
 .error-box {
   background: rgba(225, 6, 0, 0.08);
@@ -486,122 +488,98 @@
   transition: background 0.15s;
 }
 
-.retry-btn:hover {
-  background: var(--f1-red-dark);
-}
+.retry-btn:hover { background: var(--f1-red-dark); }
 
-/* ── Team panel ──────────────────────────────────────────────────────────────
-   Appears below the driver table once at least one driver is picked.
-   Lists the selected drivers with team colour, name, and price,
-   plus a total cost footer row. */
-.team-panel {
-  margin-top: 16px;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-/* Header row: "My Team" title on the left, "N/5 drivers" count on the right */
-.team-panel-header {
+/* ── Team bar ────────────────────────────────────────────────────────────────
+   Fixed bottom bar showing all picked drivers + constructors and the total cost.
+   Appears as soon as any selection is made. */
+.team-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: #15151e;
+  border-top: 2px solid var(--border);
+  padding: 10px 16px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 10px 16px;
-  background: var(--bg);
-  border-bottom: 1px solid var(--border);
+  gap: 12px;
+  min-height: 64px;
 }
 
-.team-panel-title {
+/* Horizontally scrollable chip area — allows overflow on narrow screens */
+.team-bar-chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  overflow-x: auto;
+  scrollbar-width: none; /* hide scrollbar on Firefox */
+}
+
+.team-bar-chips::-webkit-scrollbar { display: none; }
+
+/* Thin vertical rule between driver chips and constructor chips */
+.team-bar-divider {
+  width: 1px;
+  height: 28px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+/* Individual driver/constructor chip — coloured left border accent */
+.team-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--team-color, var(--border));
+  border-radius: 4px;
+  padding: 5px 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.chip-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-heading);
+}
+
+.chip-price {
   font-size: 11px;
+  font-weight: 700;
+  color: #4ade80;
+}
+
+/* Total cost — right-aligned, stays visible outside the scrollable area */
+.team-bar-total {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.team-bar-label {
+  font-size: 9px;
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.8px;
 }
 
-.team-panel-count {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-muted);
-}
-
-.team-panel-drivers {
-  display: flex;
-  flex-direction: column;
-}
-
-/* One row per picked driver — mirrors the accent bar style of the main table */
-.team-panel-driver {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 16px;
-  border-bottom: 1px solid var(--border);
-  position: relative;
-}
-
-/* Same 3px left accent bar as driver rows in the main table */
-.team-panel-driver::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  background: var(--team-color, transparent);
-}
-
-/* Driver name — takes remaining horizontal space */
-.tp-name {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-heading);
-  flex: 1;
-}
-
-/* Team name in team accent colour */
-.tp-team {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--team-color, var(--text-muted));
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-
-/* Price — right-aligned green value */
-.tp-price {
-  font-size: 13px;
-  font-weight: 700;
-  color: #4ade80;
-  min-width: 56px;
-  text-align: right;
-}
-
-/* Total cost footer — dark background to distinguish from the driver rows */
-.team-panel-total {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 16px;
-  background: var(--bg);
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-}
-
-/* Large italic total — same green as individual prices */
-.tp-total-value {
-  font-size: 18px;
+.team-bar-value {
+  font-size: 20px;
   font-weight: 900;
   color: #4ade80;
   font-style: italic;
+  line-height: 1;
 }
 
 /* ── Footer ──────────────────────────────────────────────────────────────────
-   Thin attribution line at the very bottom of the page */
+   Thin attribution line */
 .footer {
   padding: 16px 24px;
   text-align: center;
@@ -611,10 +589,8 @@
 }
 
 /* ── Responsive ──────────────────────────────────────────────────────────────
-   On small screens (≤600px): collapse to 4 columns (rank | driver | points | chevron)
-   by hiding the team cell and pick column. */
+   ≤600px: drop the team column, keep pick column */
 @media (max-width: 600px) {
-  /* On mobile: rank | driver | pick+price | points | chevron — team column hidden */
   .table-header {
     grid-template-columns: 44px 1fr 90px 64px 28px;
   }
@@ -623,22 +599,12 @@
     grid-template-columns: 44px 1fr 90px 64px 28px;
   }
 
-  /* Hide the team column only — pick column stays visible */
   .team-cell,
   .col-label.team-col {
     display: none;
   }
 
-  .driver-name {
-    font-size: 13px;
-  }
-
-  .points-value {
-    font-size: 17px;
-  }
-
-  /* Tighten the price label on small screens */
-  .pick-price {
-    font-size: 11px;
-  }
+  .driver-name { font-size: 13px; }
+  .points-value { font-size: 17px; }
+  .pick-price { font-size: 11px; }
 }

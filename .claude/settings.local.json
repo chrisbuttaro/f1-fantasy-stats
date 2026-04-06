@@ -21,7 +21,11 @@
       "Bash(node -e \"let d=''; process.stdin.on\\('data',c=>d+=c\\); process.stdin.on\\('end',\\(\\)=>{ try{ const o=JSON.parse\\(d\\); console.log\\(JSON.stringify\\(o\\).slice\\(0,1000\\)\\); }catch\\(e\\){console.log\\(d.slice\\(0,500\\)\\);} }\\)\")",
       "Bash(node -e \"let d=''; process.stdin.on\\('data',c=>d+=c\\); process.stdin.on\\('end',\\(\\)=>{ const o=JSON.parse\\(d\\); console.log\\(JSON.stringify\\(o.Data.driver[0].config,null,2\\)\\); }\\)\")",
       "Bash(node -e \"let d=''; process.stdin.on\\('data',c=>d+=c\\); process.stdin.on\\('end',\\(\\)=>{ const o=JSON.parse\\(d\\); console.log\\(JSON.stringify\\(Object.keys\\(o.Value\\),null,2\\)\\); }\\)\")",
-      "Bash(node -e \"let d=''; process.stdin.on\\('data',c=>d+=c\\); process.stdin.on\\('end',\\(\\)=>{ const o=JSON.parse\\(d\\); console.log\\(JSON.stringify\\(o.Value.FixtureWiseStats.slice\\(0,3\\),null,2\\)\\); }\\)\")"
+      "Bash(node -e \"let d=''; process.stdin.on\\('data',c=>d+=c\\); process.stdin.on\\('end',\\(\\)=>{ const o=JSON.parse\\(d\\); console.log\\(JSON.stringify\\(o.Value.FixtureWiseStats.slice\\(0,3\\),null,2\\)\\); }\\)\")",
+      "Bash(curl -s \"https://fantasy.formula1.com/feeds/v2/statistics/driverconstructors_4.json?buster=20260406205835\" -H \"accept: application/json\" -H \"Referer: https://fantasy.formula1.com/en/statistics\" --user-agent \"Mozilla/5.0\")",
+      "Bash(node -e \"let d=''; process.stdin.on\\('data',c=>d+=c\\); process.stdin.on\\('end',\\(\\)=>{ const o=JSON.parse\\(d\\); const con=o.Data.constructor; console.log\\('constructor categories:', con.length\\); con.forEach\\(\\(c,i\\)=>console.log\\(i, c.config.key, c.participants.slice\\(0,2\\).map\\(p=>\\({id:p.playerid,name:p.playername,team:p.teamname,pts:p.statvalue,price:p.curvalue,rnk:p.rnk}\\)\\)\\)\\); }\\)\")",
+      "Bash(curl -s \"https://fantasy.formula1.com/feeds/popup/playerstats_28.json?buster=20260406205835\" -H \"accept: application/json\" -H \"Referer: https://fantasy.formula1.com/en/statistics\" --user-agent \"Mozilla/5.0\")",
+      "Bash(node -e \"let d=''; process.stdin.on\\('data',c=>d+=c\\); process.stdin.on\\('end',\\(\\)=>{ try{ const o=JSON.parse\\(d\\); console.log\\('keys:', Object.keys\\(o.Value\\)\\); console.log\\('gamedays:', o.Value.GamedayWiseStats.length\\); console.log\\('sample:', JSON.stringify\\(o.Value.GamedayWiseStats[0],null,2\\)\\); }catch\\(e\\){console.log\\(d.slice\\(0,300\\)\\);} }\\)\")"
     ]
   }
 }
