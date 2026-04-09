@@ -100,23 +100,45 @@ export default function App() {
       {/* Fixed bottom bar — always visible so budget can be entered at any time */}
       <div className="team-bar">
         <div className="team-bar-chips">
-          {pickedDrivers.map(d => (
-            <div key={d.playerid} className="team-chip" style={{ '--team-color': teamColor(d.teamname) } as React.CSSProperties}>
-              <span className="team-dot" />
-              <span className="chip-name">{d.playername ?? d.teamname}</span>
-              <span className="chip-price">${d.curvalue.toFixed(1)}M</span>
+          {/* Drivers: first 2 on top row, remaining 3 on bottom row */}
+          {pickedDrivers.length > 0 && (
+            <div className="team-picks-drivers">
+              <div className="team-picks-row">
+                {pickedDrivers.slice(0, 2).map(d => (
+                  <div key={d.playerid} className="team-chip" style={{ '--team-color': teamColor(d.teamname) } as React.CSSProperties}>
+                    <span className="team-dot" />
+                    <span className="chip-name">{d.playername ?? d.teamname}</span>
+                    <span className="chip-price">${d.curvalue.toFixed(1)}M</span>
+                  </div>
+                ))}
+              </div>
+              {pickedDrivers.length > 2 && (
+                <div className="team-picks-row">
+                  {pickedDrivers.slice(2).map(d => (
+                    <div key={d.playerid} className="team-chip" style={{ '--team-color': teamColor(d.teamname) } as React.CSSProperties}>
+                      <span className="team-dot" />
+                      <span className="chip-name">{d.playername ?? d.teamname}</span>
+                      <span className="chip-price">${d.curvalue.toFixed(1)}M</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          ))}
-          {pickedDrivers.length > 0 && pickedConstructors.length > 0 && (
-            <div className="team-bar-divider" />
           )}
-          {pickedConstructors.map(c => (
-            <div key={c.playerid} className="team-chip" style={{ '--team-color': teamColor(c.teamname) } as React.CSSProperties}>
-              <span className="team-dot" />
-              <span className="chip-name">{c.teamname}</span>
-              <span className="chip-price">${c.curvalue.toFixed(1)}M</span>
+
+          {/* Constructors: stacked vertically beside drivers */}
+          {pickedConstructors.length > 0 && (
+            <div className="team-picks-constructors">
+              {pickedConstructors.map(c => (
+                <div key={c.playerid} className="team-chip" style={{ '--team-color': teamColor(c.teamname) } as React.CSSProperties}>
+                  <span className="team-dot" />
+                  <span className="chip-name">{c.teamname}</span>
+                  <span className="chip-price">${c.curvalue.toFixed(1)}M</span>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
+
           {pickedDrivers.length === 0 && pickedConstructors.length === 0 && (
             <span className="team-bar-empty">Select drivers &amp; constructors to build your team</span>
           )}

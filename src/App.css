@@ -7,7 +7,7 @@
 
 /* Team bar is always visible — reserve space so content isn't hidden beneath it */
 .app.has-team-bar {
-  padding-bottom: 80px;
+  padding-bottom: 100px;
 }
 
 /* ── Header ──────────────────────────────────────────────────────────────────
@@ -374,14 +374,18 @@
 }
 
 .pick-box {
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   flex-shrink: 0;
-  border: 2px solid var(--border);
-  border-radius: 4px;
+  border: 2px solid #71717a;  /* brighter than var(--border) so it's clearly visible */
+  border-radius: 5px;
   background: transparent;
   transition: background 0.15s, border-color 0.15s;
   position: relative;
+}
+
+.pick-label:not(.disabled):hover .pick-box {
+  border-color: #a1a1aa;
 }
 
 .pick-box.checked {
@@ -393,10 +397,10 @@
 .pick-box.checked::after {
   content: '';
   position: absolute;
-  left: 5px;
-  top: 1px;
-  width: 7px;
-  height: 12px;
+  left: 6px;
+  top: 2px;
+  width: 8px;
+  height: 13px;
   border-right: 2.5px solid #fff;
   border-bottom: 2.5px solid #fff;
   transform: rotate(45deg);
@@ -505,27 +509,42 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  min-height: 64px;
+  min-height: 80px;
 }
 
-/* Horizontally scrollable chip area — allows overflow on narrow screens */
+/* Chip area: drivers grid + constructors stack sit side by side */
 .team-bar-chips {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  align-items: flex-start;
+  gap: 10px;
   flex: 1;
   overflow-x: auto;
-  scrollbar-width: none; /* hide scrollbar on Firefox */
+  scrollbar-width: none;
 }
 
 .team-bar-chips::-webkit-scrollbar { display: none; }
 
-/* Thin vertical rule between driver chips and constructor chips */
-.team-bar-divider {
-  width: 1px;
-  height: 28px;
-  background: var(--border);
-  flex-shrink: 0;
+/* Drivers block: two rows (2 chips then up to 3 chips) */
+.team-picks-drivers {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.team-picks-row {
+  display: flex;
+  gap: 6px;
+}
+
+/* Constructors block: stacked vertically, with a left-border separator */
+.team-picks-constructors {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-left: 10px;
+  border-left: 1px solid var(--border);
+  align-self: stretch;
+  justify-content: center;
 }
 
 /* Individual driver/constructor chip — coloured left border accent */
@@ -565,9 +584,9 @@
 .team-bar-budget {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   flex-shrink: 0;
-  padding-left: 12px;
+  padding-left: 16px;
   border-left: 1px solid var(--border);
 }
 
@@ -575,35 +594,35 @@
 .budget-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .budget-label {
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  min-width: 32px;
+  min-width: 36px;
 }
 
 /* $ prefix and M suffix around the input */
 .budget-currency {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
   color: #4ade80;
 }
 
 .budget-input {
-  width: 56px;
+  width: 68px;
   background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  border: 1px solid #71717a;
+  border-radius: 5px;
   color: #4ade80;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
   font-family: inherit;
-  padding: 2px 4px;
+  padding: 4px 6px;
   text-align: right;
   /* hide browser spin buttons */
   appearance: none;
@@ -620,7 +639,7 @@
 
 /* Remaining balance — green normally, red when over budget */
 .budget-remaining {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
   color: #4ade80;
 }
@@ -630,7 +649,7 @@
 }
 
 .budget-spent {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--text-muted);
 }
