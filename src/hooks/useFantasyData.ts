@@ -1,5 +1,14 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { Participant } from '../types'
+import { readCache, writeCache } from '../cache'
+
+const CACHE_KEY = 'f1_main'
+
+interface CachedPayload {
+  drivers: Participant[]
+  constructors: Participant[]
+  season: string
+}
 
 interface FantasyData {
   drivers: Participant[]
@@ -11,12 +20,14 @@ interface FantasyData {
 }
 
 // Fetches drivers and constructors from the same F1 Fantasy endpoint.
-// driver[0] and constructor[0] are both the "fantasy points" category.
+// Responses are cached in localStorage for 24 hours and invalidated on each new build.
 export function useFantasyData(): FantasyData {
-  const [drivers, setDrivers] = useState<Participant[]>([])
-  const [constructors, setConstructors] = useState<Participant[]>([])
-  const [season, setSeason] = useState('')
-  const [loading, setLoading] = useState(true)
+  const cached = readCache<CachedPayload>(CACHE_KEY)
+
+  const [drivers, setDrivers] = useState<Participant[]>(cached?.drivers ?? [])
+  const [constructors, setConstructors] = useState<Participant[]>(cached?.constructors ?? [])
+  const [season, setSeason] = useState(cached?.season ?? '')
+  const [loading, setLoading] = useState(!cached)
   const [error, setError] = useState<string | null>(null)
 
   const fetchData = useCallback(async () => {
@@ -30,9 +41,14 @@ export function useFantasyData(): FantasyData {
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const json = await res.json()
       const data = json.Data
-      setSeason(data.season ?? '')
-      setDrivers([...data.driver[0].participants].sort((a: Participant, b: Participant) => b.statvalue - a.statvalue))
-      setConstructors([...data.constructor[0].participants].sort((a: Participant, b: Participant) => b.statvalue - a.statvalue))
+      const season = data.season ?? ''
+      const drivers = [...data.driver[0].participants].sort((a: Participant, b: Participant) => b.statvalue - a.statvalue)
+      const constructors = [...data.constructor[0].participants].sort((a: Participant, b: Participant) => b.statvalue - a.statvalue)
+
+      setSeason(season)
+      setDrivers(drivers)
+      setConstructors(constructors)
+      writeCache<CachedPayload>(CACHE_KEY, { drivers, constructors, season })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load data')
     } finally {
@@ -40,7 +56,10 @@ export function useFantasyData(): FantasyData {
     }
   }, [])
 
-  useEffect(() => { fetchData() }, [fetchData])
+  // Only fetch on mount if there was no valid cache
+  useEffect(() => {
+    if (!cached) fetchData()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return { drivers, constructors, season, loading, error, fetchData }
 }

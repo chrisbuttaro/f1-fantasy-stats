@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
 import { teamColor } from './constants'
 import { useFantasyData } from './hooks/useFantasyData'
@@ -10,7 +10,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'drivers' | 'constructors'>('drivers')
 
   const { drivers, constructors, season, loading, error, fetchData } = useFantasyData()
-  const { expandedId, statsCache, statsLoading, statsError, toggleExpand, collapseAll } = useChartExpansion()
+  const { expandedId, statsCache, statsLoading, statsError, toggleExpand, collapseAll, prefetchAll } = useChartExpansion()
   const {
     pickedDriverIds, pickedConstructorIds,
     pickedDrivers, pickedConstructors,
@@ -18,6 +18,13 @@ export default function App() {
     budget, totalCost, remainingBudget,
     toggleDriverPick, toggleConstructorPick,
   } = useTeamPicker(drivers, constructors)
+
+  // Once main data is loaded, kick off background prefetch for all player charts
+  useEffect(() => {
+    if (!loading && drivers.length > 0) {
+      prefetchAll([...drivers, ...constructors].map(p => p.playerid))
+    }
+  }, [loading, drivers, constructors, prefetchAll])
 
   const handleTabChange = (tab: 'drivers' | 'constructors') => {
     setActiveTab(tab)
