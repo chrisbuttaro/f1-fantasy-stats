@@ -12,7 +12,7 @@ interface ChartExpansion {
 }
 
 // Fetches per-race stats for a player from the popup endpoint.
-// Caching is handled at Vercel's CDN layer — no localStorage used.
+// Responses are cached in Upstash Redis per player per day; in-memory cache avoids re-fetching within a session.
 async function fetchPlayerStats(playerId: string): Promise<RaceStat[]> {
   const res = await fetch(`/api/f1-popup/playerstats_${playerId}.json`, {
     headers: { Accept: 'application/json, text/plain, */*', Referer: 'https://fantasy.formula1.com/en/statistics' },

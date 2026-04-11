@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository. If you notice anything inaccurate in this file, fix it.
 
 ## Commands
 
@@ -15,7 +15,7 @@ No test runner is configured yet.
 
 ## Architecture
 
-This is a React 19 + TypeScript app bootstrapped with Vite 8. Currently in early/starter state — `src/App.tsx` is the single component with placeholder content.
+This is a React 19 + TypeScript app bootstrapped with Vite 8.
 
 - Entry: `index.html` → `src/main.tsx` → `src/App.tsx`
 - Styling: plain CSS via `src/App.css` and `src/index.css`
@@ -23,16 +23,37 @@ This is a React 19 + TypeScript app bootstrapped with Vite 8. Currently in early
 - ESLint config uses flat config format (`eslint.config.js`) with `typescript-eslint`, `eslint-plugin-react-hooks`, and `eslint-plugin-react-refresh`
 - TypeScript uses split tsconfig: `tsconfig.app.json` for source, `tsconfig.node.json` for Vite config
 
+Key pieces:
+- `useFantasyData` — fetches drivers + constructors from `/api/f1/driverconstructors_4.json`
+- `useChartExpansion` — fetches per-race stats from `/api/f1-popup/playerstats_{playerId}.json` on row expand; prefetches all players in the background on load; in-memory cache for the session
+- `useTeamPicker` — manages team selection (max 5 drivers, 2 constructors) and budget tracking
+- `RankingTable` — renders the ranked list with expandable rows; `RaceChart` renders inside expanded rows
+
 ## F1 Fantasy API
 
-The app fetches from `https://fantasy.formula1.com/feeds/v2/statistics/driverconstructors_4.json`. This endpoint returns no CORS headers, so all browser fetches must go through the Vite dev proxy configured in `vite.config.ts` at `/api/f1/*` → `https://fantasy.formula1.com/feeds/v2/statistics/*`. Production deployments will need an equivalent proxy or server-side fetch.
+All browser fetches go through the proxy (`/api/f1/*`, `/api/f1-popup/*`) — the upstream returns no CORS headers. Dev uses the Vite proxy; production uses Vercel edge functions backed by Upstash Redis.
 
-Response shape:
+**Stats endpoint** — `driverconstructors_4.json`:
 ```
-{ Data: { season: "2026", driver: [ { config: {...}, participants: Driver[] } ] } }
+{ Data: { season: "2026", driver: [ { participants: Participant[] } ], constructor: [ { participants: Participant[] } ] } }
 ```
+`driver[0]` and `constructor[0]` are the "fantasy points" categories. Each `Participant`: `playerid`, `playername` (null for constructors), `curvalue` (price $m), `teamid`, `teamname`, `statvalue` (fantasy points), `rnk`.
 
-`driver[0]` is the "fantasy points" category. Each `Driver` has: `playerid`, `playername`, `curvalue` (price in $m), `teamid`, `teamname`, `statvalue` (fantasy points), `rnk`.
+**Popup endpoint** — `playerstats_{playerId}.json`:
+```
+{ Value: { GamedayWiseStats: [ { GamedayId, StatsWise: [ { Event, Value } ] } ], FixtureWiseStats: [ { GamedayId, RaceDayWise: [ { MeetingName, CountryName } ] } ] } }
+```
+Points per race are derived by joining on `GamedayId` and finding `Event === "Total"` in `StatsWise`.
+
+## Caching
+
+Production data is stored in Upstash Redis (connected via Vercel Storage integration — provides `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` automatically). Always import from `@upstash/redis`, not `@upstash/redis/cloudflare` — the cloudflare variant reads env vars via Cloudflare's Worker binding and silently fails on Vercel.
+
+- **Static endpoints** (e.g. `driverconstructors_4.json`): pre-fetched daily at midnight UTC via cron and stored under `f1:stats:{endpoint}`. To add a new metric, add its filename to `STATS_ENDPOINTS` in `api/ingest.js` — nothing else needs changing.
+- **Popup data** (per-player): lazily cached on first request per day under `f1:popup:{path}:{YYYY-MM-DD}`.
+- **First-user-of-day fallback**: `api/f1/[...path].js` checks `f1:ingest_date` and calls `/api/ingest` if today's data isn't present yet.
+
+Local dev uses the Vite proxy and never touches Redis.
 
 ## Code Style
 
