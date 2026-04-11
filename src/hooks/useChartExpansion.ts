@@ -1,8 +1,5 @@
 import { useState, useCallback, useRef } from 'react'
 import type { RaceStat } from '../types'
-import { readCache, writeCache } from '../cache'
-
-const CACHE_KEY = 'f1_stats'
 
 interface ChartExpansion {
   expandedId: string | null
@@ -14,11 +11,10 @@ interface ChartExpansion {
   prefetchAll: (playerIds: string[]) => void
 }
 
-// Module-level helper — parses the popup API response into RaceStat[].
-// Used by both toggleExpand and prefetchAll.
+// Fetches per-race stats for a player from the popup endpoint.
+// Caching is handled at Vercel's CDN layer — no localStorage used.
 async function fetchPlayerStats(playerId: string): Promise<RaceStat[]> {
-  const buster = new Date().toISOString().replace(/\D/g, '').slice(0, 14)
-  const res = await fetch(`/api/f1-popup/playerstats_${playerId}.json?buster=${buster}`, {
+  const res = await fetch(`/api/f1-popup/playerstats_${playerId}.json`, {
     headers: { Accept: 'application/json, text/plain, */*', Referer: 'https://fantasy.formula1.com/en/statistics' },
   })
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -42,13 +38,10 @@ async function fetchPlayerStats(playerId: string): Promise<RaceStat[]> {
   return races
 }
 
-// Manages which row has its chart open and caches per-race stats.
-// Stats are persisted to localStorage so repeat visits within 24h skip the fetch.
+// Manages which row has its chart open and keeps an in-memory stats cache for the session.
 export function useChartExpansion(): ChartExpansion {
   const [expandedId, setExpandedId] = useState<string | null>(null)
-  const [statsCache, setStatsCache] = useState<Record<string, RaceStat[]>>(
-    readCache<Record<string, RaceStat[]>>(CACHE_KEY) ?? {}
-  )
+  const [statsCache, setStatsCache] = useState<Record<string, RaceStat[]>>({})
   const [statsLoading, setStatsLoading] = useState(false)
   const [statsError, setStatsError] = useState<string | null>(null)
 
@@ -59,7 +52,6 @@ export function useChartExpansion(): ChartExpansion {
     setStatsCache(prev => {
       const next = { ...prev, [playerId]: races }
       statsCacheRef.current = next
-      writeCache(CACHE_KEY, next)
       return next
     })
   }, [])

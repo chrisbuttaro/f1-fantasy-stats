@@ -1,14 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { Participant } from '../types'
-import { readCache, writeCache } from '../cache'
-
-const CACHE_KEY = 'f1_main'
-
-interface CachedPayload {
-  drivers: Participant[]
-  constructors: Participant[]
-  season: string
-}
 
 interface FantasyData {
   drivers: Participant[]
@@ -19,23 +10,20 @@ interface FantasyData {
   fetchData: () => void
 }
 
-// Fetches drivers and constructors from the same F1 Fantasy endpoint.
-// Responses are cached in localStorage for 24 hours and invalidated on each new build.
+// Fetches drivers and constructors from the F1 Fantasy endpoint.
+// Caching is handled at Vercel's CDN layer (24h s-maxage) — no localStorage used.
 export function useFantasyData(): FantasyData {
-  const cached = readCache<CachedPayload>(CACHE_KEY)
-
-  const [drivers, setDrivers] = useState<Participant[]>(cached?.drivers ?? [])
-  const [constructors, setConstructors] = useState<Participant[]>(cached?.constructors ?? [])
-  const [season, setSeason] = useState(cached?.season ?? '')
-  const [loading, setLoading] = useState(!cached)
+  const [drivers, setDrivers] = useState<Participant[]>([])
+  const [constructors, setConstructors] = useState<Participant[]>([])
+  const [season, setSeason] = useState('')
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const fetchData = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const buster = new Date().toISOString().replace(/\D/g, '').slice(0, 14)
-      const res = await fetch(`/api/f1/driverconstructors_4.json?buster=${buster}`, {
+      const res = await fetch('/api/f1/driverconstructors_4.json', {
         headers: { Accept: 'application/json, text/plain, */*', Referer: 'https://fantasy.formula1.com/en/statistics' },
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -48,7 +36,6 @@ export function useFantasyData(): FantasyData {
       setSeason(season)
       setDrivers(drivers)
       setConstructors(constructors)
-      writeCache<CachedPayload>(CACHE_KEY, { drivers, constructors, season })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load data')
     } finally {
@@ -56,10 +43,7 @@ export function useFantasyData(): FantasyData {
     }
   }, [])
 
-  // Only fetch on mount if there was no valid cache
-  useEffect(() => {
-    if (!cached) fetchData()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { fetchData() }, [fetchData])
 
   return { drivers, constructors, season, loading, error, fetchData }
 }
