@@ -21,17 +21,20 @@ async function fetchPlayerStats(playerId: string): Promise<RaceStat[]> {
   const json = await res.json()
   const val = json.Value
 
+  // Track which gamedays have occurred — the API includes a GamedayWiseStats entry for every
+  // completed race (even 0-point ones), but omits future races entirely.
+  const happenedGamedays = new Set<number>()
   const totals: Record<number, number> = {}
   for (const gd of val.GamedayWiseStats) {
+    happenedGamedays.add(gd.GamedayId)
     const total = gd.StatsWise.find((s: { Event: string }) => s.Event === 'Total')
     if (total) totals[gd.GamedayId] = total.Value
   }
 
   const races: RaceStat[] = []
   for (const fx of val.FixtureWiseStats) {
-    if (fx.RaceDayWise.length > 0) {
+    if (fx.RaceDayWise.length > 0 && happenedGamedays.has(fx.GamedayId)) {
       const rd = fx.RaceDayWise[0]
-      // Default to 0 — the API omits gamedays with no points from GamedayWiseStats
       races.push({ gamedayId: fx.GamedayId, meetingName: rd.MeetingName, location: rd.CountryName, points: totals[fx.GamedayId] ?? 0 })
     }
   }
