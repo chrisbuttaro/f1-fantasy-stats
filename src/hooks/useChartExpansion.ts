@@ -31,6 +31,8 @@ async function fetchPlayerStats(playerId: string): Promise<RaceStat[]> {
     if (total) totals[gd.GamedayId] = total.Value
   }
 
+  console.log('FixtureWiseStats', JSON.stringify(val.FixtureWiseStats, null, 2))
+
   const races: RaceStat[] = []
   for (const fx of val.FixtureWiseStats) {
     if (fx.RaceDayWise.length > 0 && happenedGamedays.has(fx.GamedayId)) {
