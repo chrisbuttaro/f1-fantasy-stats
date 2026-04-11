@@ -1,4 +1,4 @@
-import { Redis } from '@upstash/redis/cloudflare';
+import { Redis } from '@upstash/redis';
 
 export const config = { runtime: 'edge' };
 
