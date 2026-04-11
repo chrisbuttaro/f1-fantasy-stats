@@ -29,9 +29,10 @@ async function fetchPlayerStats(playerId: string): Promise<RaceStat[]> {
 
   const races: RaceStat[] = []
   for (const fx of val.FixtureWiseStats) {
-    if (fx.RaceDayWise.length > 0 && totals[fx.GamedayId] !== undefined) {
+    if (fx.RaceDayWise.length > 0) {
       const rd = fx.RaceDayWise[0]
-      races.push({ gamedayId: fx.GamedayId, meetingName: rd.MeetingName, location: rd.CountryName, points: totals[fx.GamedayId] })
+      // Default to 0 — the API omits gamedays with no points from GamedayWiseStats
+      races.push({ gamedayId: fx.GamedayId, meetingName: rd.MeetingName, location: rd.CountryName, points: totals[fx.GamedayId] ?? 0 })
     }
   }
   races.sort((a, b) => a.gamedayId - b.gamedayId)
