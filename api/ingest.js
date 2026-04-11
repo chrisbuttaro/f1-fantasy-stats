@@ -22,9 +22,10 @@ export default async function handler(request) {
   const redis = Redis.fromEnv();
   const today = new Date().toISOString().split('T')[0]; // UTC date: "YYYY-MM-DD"
 
-  // Idempotent guard — cron may fire, then first user arrives and hits this too
+  // Idempotent guard — skip if already ran today, unless this is a manual call with ?force=true
+  const force = new URL(request.url).searchParams.get('force') === 'true';
   const lastIngest = await redis.get('f1:ingest_date');
-  if (lastIngest === today) {
+  if (!force && lastIngest === today) {
     return new Response(JSON.stringify({ status: 'skipped', date: today }), {
       headers: { 'Content-Type': 'application/json' },
     });
