@@ -4,12 +4,15 @@ import { teamColor } from './constants'
 import { useFantasyData } from './hooks/useFantasyData'
 import { useChartExpansion } from './hooks/useChartExpansion'
 import { useTeamPicker } from './hooks/useTeamPicker'
+import { useOdds } from './hooks/useOdds'
 import RankingTable from './components/RankingTable'
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'drivers' | 'constructors'>('drivers')
+  const [statMode, setStatMode] = useState<'fantasy' | 'vegas'>('fantasy')
 
   const { drivers, constructors, season, loading, error, fetchData } = useFantasyData()
+  const { oddsData, oddsLoading, oddsError } = useOdds()
   const { expandedId, statsCache, statsLoading, statsError, toggleExpand, collapseAll, prefetchAll } = useChartExpansion()
   const {
     pickedDriverIds, pickedConstructorIds,
@@ -57,12 +60,31 @@ export default function App() {
           </div>
 
           <div className="tabs">
-            <button className={`tab${activeTab === 'drivers' ? ' active' : ''}`} onClick={() => handleTabChange('drivers')}>
-              Drivers
-            </button>
-            <button className={`tab${activeTab === 'constructors' ? ' active' : ''}`} onClick={() => handleTabChange('constructors')}>
-              Constructors
-            </button>
+            <div className="tabs-nav">
+              <button className={`tab${activeTab === 'drivers' ? ' active' : ''}`} onClick={() => handleTabChange('drivers')}>
+                Drivers
+              </button>
+              <button className={`tab${activeTab === 'constructors' ? ' active' : ''}`} onClick={() => handleTabChange('constructors')}>
+                Constructors
+              </button>
+            </div>
+            <div className="stat-selector">
+              <span className="stat-selector-label">Select Statistic</span>
+              <select
+                className="stat-select"
+                value={statMode}
+                onChange={e => setStatMode(e.target.value as 'fantasy' | 'vegas')}
+              >
+                <option value="fantasy">Fantasy Points</option>
+                <option value="vegas">
+                  {oddsLoading
+                    ? 'Vegas — Loading…'
+                    : oddsError
+                    ? 'Vegas — Unavailable'
+                    : `Vegas — ${oddsData?.raceName ?? 'Next Race'} GP`}
+                </option>
+              </select>
+            </div>
           </div>
 
           {activeTab === 'drivers' ? (
@@ -78,6 +100,10 @@ export default function App() {
               statsCache={statsCache}
               statsLoading={statsLoading}
               statsError={statsError}
+              statMode={statMode}
+              oddsData={oddsData}
+              oddsLoading={oddsLoading}
+              oddsError={oddsError}
             />
           ) : (
             <RankingTable
@@ -92,6 +118,10 @@ export default function App() {
               statsCache={statsCache}
               statsLoading={statsLoading}
               statsError={statsError}
+              statMode={statMode}
+              oddsData={oddsData}
+              oddsLoading={oddsLoading}
+              oddsError={oddsError}
             />
           )}
         </main>

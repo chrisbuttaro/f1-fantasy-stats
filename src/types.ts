@@ -10,6 +10,21 @@ export interface Participant {
   rnk: number
 }
 
+// Per-driver win odds for an upcoming race, sourced from The Odds API
+export interface DriverOdds {
+  name: string
+  price: number            // American odds integer (e.g. 250, -200)
+  formattedPrice: string   // "+250" or "-200"
+  impliedProbability: number
+}
+
+export interface OddsData {
+  raceName: string
+  commenceTime: string
+  bookmaker: string
+  drivers: DriverOdds[]
+}
+
 // Per-race points built from GamedayWiseStats + FixtureWiseStats
 export interface RaceStat {
   gamedayId: number

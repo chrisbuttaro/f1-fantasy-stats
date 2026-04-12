@@ -1,4 +1,4 @@
-import type { Participant, RaceStat } from '../types'
+import type { Participant, RaceStat, DriverOdds, OddsData } from '../types'
 import { teamColor } from '../constants'
 import RaceChart from './RaceChart'
 
@@ -14,6 +14,29 @@ export interface RankingTableProps {
   statsCache: Record<string, RaceStat[]>
   statsLoading: boolean
   statsError: string | null
+  statMode: 'fantasy' | 'vegas'
+  oddsData: OddsData | null
+  oddsLoading: boolean
+  oddsError: string | null
+}
+
+// Build a name → DriverOdds lookup; tries full name then last name as fallback.
+function buildOddsLookup(drivers: DriverOdds[]): Map<string, DriverOdds> {
+  const map = new Map<string, DriverOdds>()
+  for (const d of drivers) {
+    // Last name first so full-name entries overwrite on collision
+    const lastName = d.name.split(' ').pop()?.toLowerCase()
+    if (lastName) map.set(lastName, d)
+  }
+  for (const d of drivers) {
+    map.set(d.name.toLowerCase(), d)
+  }
+  return map
+}
+
+function getDriverOdds(lookup: Map<string, DriverOdds>, displayName: string): DriverOdds | undefined {
+  return lookup.get(displayName.toLowerCase())
+    ?? lookup.get(displayName.split(' ').pop()?.toLowerCase() ?? '')
 }
 
 // Shared table for both drivers and constructors.
@@ -21,7 +44,24 @@ export interface RankingTableProps {
 export default function RankingTable({
   items, isConstructor, expandedId, onExpand,
   pickedIds, onPick, maxPicks, remainingBudget, statsCache, statsLoading, statsError,
+  statMode, oddsData, oddsLoading, oddsError,
 }: RankingTableProps) {
+  const isVegas = statMode === 'vegas'
+
+  // Build odds lookup and sort items when in Vegas mode
+  const oddsLookup = oddsData ? buildOddsLookup(oddsData.drivers) : new Map<string, DriverOdds>()
+
+  const displayItems = isVegas && !isConstructor && oddsData
+    ? [...items].sort((a, b) => {
+        const oA = getDriverOdds(oddsLookup, a.playername ?? a.teamname)
+        const oB = getDriverOdds(oddsLookup, b.playername ?? b.teamname)
+        if (!oA && !oB) return 0
+        if (!oA) return 1  // no-odds drivers sink to the bottom
+        if (!oB) return -1
+        return oB.impliedProbability - oA.impliedProbability
+      })
+    : items
+
   // Find the single-race high and low across all cached participants for shared chart scaling
   let globalMax: { points: number; name: string } | undefined
   let globalMin: { points: number; name: string } | undefined
@@ -35,6 +75,40 @@ export default function RankingTable({
     }
   }
 
+  // Constructors tab in Vegas mode — no data yet
+  if (isVegas && isConstructor) {
+    return (
+      <div className="table-card">
+        <div className="table-header">
+          <span className="col-label">Rank</span>
+          <span className="col-label">Constructor</span>
+          <span className="col-label team-col">Team</span>
+          <span className="col-label right pick-col">Select<br/>Your<br/>Constructors</span>
+          <span className="col-label right">Win<br/>Odds</span>
+        </div>
+        <div className="vegas-no-data">No Vegas odds available for constructors</div>
+      </div>
+    )
+  }
+
+  // Vegas mode with odds still loading or errored
+  if (isVegas && !isConstructor) {
+    if (oddsLoading) {
+      return (
+        <div className="table-card">
+          <div className="state-container"><div className="loading-spinner" /></div>
+        </div>
+      )
+    }
+    if (oddsError) {
+      return (
+        <div className="table-card">
+          <div className="vegas-no-data">Failed to load odds: {oddsError}</div>
+        </div>
+      )
+    }
+  }
+
   return (
     <div className="table-card">
       {/* Header — 6 columns must match .driver-row grid exactly */}
@@ -43,23 +117,26 @@ export default function RankingTable({
         <span className="col-label">{isConstructor ? 'Constructor' : 'Driver'}</span>
         <span className="col-label team-col">Team</span>
         <span className="col-label right pick-col">Select<br/>Your<br/>{isConstructor ? 'Constructors' : 'Drivers'}</span>
-        <span className="col-label right">Season<br/>Points</span>
+        <span className="col-label right">{isVegas ? 'Win\nOdds' : 'Season\nPoints'}</span>
       </div>
 
-      {items.map((item, idx) => {
+      {displayItems.map((item, idx) => {
         const color = teamColor(item.teamname)
-        const rankClass = item.rnk === 1 ? 'rank-1' : item.rnk === 2 ? 'rank-2' : item.rnk === 3 ? 'rank-3' : ''
+        const displayName = item.playername ?? item.teamname
+        const itemOdds = isVegas ? getDriverOdds(oddsLookup, displayName) : undefined
+
+        // In Vegas mode rank follows odds order; in Fantasy mode use the API rank
+        const rank = isVegas ? idx + 1 : item.rnk
+        const rankClass = rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : ''
+
         const isExpanded = expandedId === item.playerid
         const isPicked = pickedIds.includes(item.playerid)
-        // Disabled when: count limit reached, OR budget set and price exceeds what's left
         const pickDisabled = !isPicked && (
           pickedIds.length >= maxPicks ||
           (remainingBudget !== null && item.curvalue > remainingBudget)
         )
-        const isLast = idx === items.length - 1
+        const isLast = idx === displayItems.length - 1
         const stats = statsCache[item.playerid]
-        // Constructors use teamname as their display name
-        const displayName = item.playername ?? item.teamname
 
         return (
           <div
@@ -73,12 +150,11 @@ export default function RankingTable({
               onClick={() => onExpand(item.playerid)}
             >
               <div className="rank">
-                <span className={`rank-number ${rankClass}`}>{item.rnk}</span>
+                <span className={`rank-number ${rankClass}`}>{rank}</span>
               </div>
 
               <div className="driver-info">
                 <span className="driver-name">{displayName}</span>
-                {/* Sub-label only for drivers — constructors' name already is the team */}
                 {!isConstructor && (
                   <span className="driver-team-label">{item.teamname}</span>
                 )}
@@ -100,12 +176,21 @@ export default function RankingTable({
                 </label>
               </div>
 
-              <div className="points">
-                <span className={`points-value ${item.statvalue < 0 ? 'negative' : ''}`}>
-                  {item.statvalue > 0 ? '+' : ''}{item.statvalue}
-                </span>
-                <span className="points-unit">pts</span>
-              </div>
+              {isVegas ? (
+                <div className="points">
+                  <span className={`points-value${itemOdds && itemOdds.price < 0 ? ' odds-fav' : ''}`}>
+                    {itemOdds ? itemOdds.formattedPrice : '—'}
+                  </span>
+                  <span className="points-unit">odds</span>
+                </div>
+              ) : (
+                <div className="points">
+                  <span className={`points-value ${item.statvalue < 0 ? 'negative' : ''}`}>
+                    {item.statvalue > 0 ? '+' : ''}{item.statvalue}
+                  </span>
+                  <span className="points-unit">pts</span>
+                </div>
+              )}
 
               <div className={`row-chevron${isExpanded ? ' open' : ''}`} />
             </div>
