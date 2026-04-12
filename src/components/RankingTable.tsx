@@ -22,6 +22,19 @@ export default function RankingTable({
   items, isConstructor, expandedId, onExpand,
   pickedIds, onPick, maxPicks, remainingBudget, statsCache, statsLoading, statsError,
 }: RankingTableProps) {
+  // Find the single-race high and low across all cached participants for shared chart scaling
+  let globalMax: { points: number; name: string } | undefined
+  let globalMin: { points: number; name: string } | undefined
+  for (const item of items) {
+    const stats = statsCache[item.playerid]
+    if (!stats?.length) continue
+    const name = item.playername ?? item.teamname
+    for (const stat of stats) {
+      if (!globalMax || stat.points > globalMax.points) globalMax = { points: stat.points, name }
+      if (!globalMin || stat.points < globalMin.points) globalMin = { points: stat.points, name }
+    }
+  }
+
   return (
     <div className="table-card">
       {/* Header — 6 columns must match .driver-row grid exactly */}
@@ -107,7 +120,7 @@ export default function RankingTable({
                 ) : stats && stats.length > 0 ? (
                   <>
                     <div className="chart-title">{displayName} — Points per Race</div>
-                    <RaceChart stats={stats} color={color} />
+                    <RaceChart stats={stats} color={color} globalMax={globalMax} globalMin={globalMin} />
                   </>
                 ) : null}
               </div>

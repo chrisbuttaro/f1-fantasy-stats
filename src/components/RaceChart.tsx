@@ -1,21 +1,33 @@
 import type { RaceStat } from '../types'
 
+interface Bound {
+  points: number
+  name: string
+}
+
 interface RaceChartProps {
   stats: RaceStat[]
   color: string
+  globalMax?: Bound
+  globalMin?: Bound
 }
 
 // Pure SVG line chart showing fantasy points per race for one participant.
-export default function RaceChart({ stats, color }: RaceChartProps) {
+// globalMax/globalMin scale the y-axis to the best/worst single-race score across all participants.
+export default function RaceChart({ stats, color, globalMax, globalMin }: RaceChartProps) {
   const W = 560, H = 160
-  const pad = { top: 28, right: 20, bottom: 50, left: 44 }
+  const pad = { top: 28, right: 110, bottom: 50, left: 44 }
   const plotW = W - pad.left - pad.right
   const plotH = H - pad.top - pad.bottom
   const n = stats.length
 
   const values = stats.map(s => s.points)
-  const minV = Math.min(...values)
-  const maxV = Math.max(...values)
+  const localMin = Math.min(...values)
+  const localMax = Math.max(...values)
+
+  // Expand y range to global bounds so all charts share the same scale
+  const minV = globalMin ? Math.min(globalMin.points, localMin) : localMin
+  const maxV = globalMax ? Math.max(globalMax.points, localMax) : localMax
   const allSame = minV === maxV
 
   const xOf = (i: number) => pad.left + (n === 1 ? plotW / 2 : (i / (n - 1)) * plotW)
@@ -25,13 +37,19 @@ export default function RaceChart({ stats, color }: RaceChartProps) {
 
   const polylinePoints = stats.map((s, i) => `${xOf(i)},${yOf(s.points)}`).join(' ')
 
-  const guides = allSame
-    ? [{ v: minV, y: yOf(minV) }]
-    : [
-        { v: minV, y: yOf(minV) },
-        { v: Math.round((minV + maxV) / 2), y: yOf((minV + maxV) / 2) },
-        { v: maxV, y: yOf(maxV) },
+  // Use global bounds as named guide lines; fall back to local min/mid/max
+  const guides: { v: number; y: number; label: string }[] = globalMax && globalMin
+    ? [
+        { v: globalMin.points, y: yOf(globalMin.points), label: globalMin.name },
+        { v: globalMax.points, y: yOf(globalMax.points), label: globalMax.name },
       ]
+    : allSame
+      ? [{ v: minV, y: yOf(minV), label: '' }]
+      : [
+          { v: minV, y: yOf(minV), label: '' },
+          { v: Math.round((minV + maxV) / 2), y: yOf((minV + maxV) / 2), label: '' },
+          { v: maxV, y: yOf(maxV), label: '' },
+        ]
 
   // Closed path that fills the area beneath the line
   const areaPath = n > 1
@@ -54,13 +72,18 @@ export default function RaceChart({ stats, color }: RaceChartProps) {
         </linearGradient>
       </defs>
 
-      {/* Horizontal guide lines with y-axis value labels */}
+      {/* Horizontal guide lines — left label is the points value, right label is participant name */}
       {guides.map((g, i) => (
         <g key={i}>
           <line x1={pad.left} y1={g.y} x2={W - pad.right} y2={g.y} stroke="#2a2a3a" strokeWidth="1" />
           <text x={pad.left - 6} y={g.y} textAnchor="end" dominantBaseline="middle" fontSize="9" fill="#71717a">
             {g.v}
           </text>
+          {g.label && (
+            <text x={W - pad.right + 6} y={g.y} textAnchor="start" dominantBaseline="middle" fontSize="9" fill="#71717a">
+              {g.label}
+            </text>
+          )}
         </g>
       ))}
 
